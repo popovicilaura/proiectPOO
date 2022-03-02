@@ -1,0 +1,2173 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include<iostream>
+#include<fstream>
+#include<string>
+#include<map>
+#include<set>
+#include<vector>
+#include<list>
+using namespace std;
+
+//GESTIUNEA UNUI SPITAL
+
+class IFile
+{
+	virtual void writeToFile(fstream& file) = 0;
+	virtual void readFromFile(fstream& file) = 0;
+};
+
+
+class Angajat
+{
+
+	int vechime = 0;
+	bool doctorat;
+
+public:
+	Angajat() :vechime(0), doctorat(0)
+	{
+
+	}
+
+	Angajat(int vechime, bool doctorat)
+	{
+		this->vechime = vechime;
+		this->doctorat = doctorat;
+	}
+
+	Angajat(const Angajat& a)
+	{
+		this->vechime = a.vechime;
+		this->doctorat = a.doctorat;
+	}
+
+	Angajat& operator=(const Angajat& a)
+	{
+
+		this->vechime = a.vechime;
+		this->doctorat = a.doctorat;
+		return *this;
+	}
+
+	~Angajat()
+	{
+
+	}
+
+
+	friend ostream& operator<<(ostream& out, const Angajat& a)
+	{
+		out << endl;
+		out << "vechime: " << a.vechime << endl;
+		if (a.doctorat == 1)
+			out << "are doctorat";
+		else
+			out << "nu are doctorat";
+		out << endl;
+		return out;
+	}
+
+	friend istream& operator>>(istream& in, Angajat& a)
+	{
+		cout << "vechime: ";
+		in >> a.vechime;
+		cout << "doctorat: ";
+		in >> a.doctorat;
+		return in;
+	}
+};
+
+class Pacient : public IFile
+
+{
+protected:
+	string nume;
+	const int id;
+	char* cnp;
+	int varsta;
+	int nrprogramari;
+	int* programari;//tipurile de programari
+	bool abonament;
+	static int nrpacienti;
+public:
+
+	Pacient() :nume("NA"), id(++nrpacienti), cnp(NULL), varsta(0), nrprogramari(0), programari(NULL), abonament(0)
+	{
+
+	}
+
+	Pacient(string nume, char* cnp, int varsta) : nume(nume), id(++nrpacienti), varsta(varsta)
+	{
+		if (cnp != NULL)
+		{
+			this->cnp = new char[strlen(cnp) + 1];
+			strcpy(this->cnp, cnp);
+		}
+		this->nrprogramari = 0;
+		this->programari = NULL;
+		this->abonament = 0;
+	}
+
+	Pacient(string nume, char* cnp, int varsta, int nrprogramari, int* programari, bool abonament) : nume(nume), id(++nrpacienti), varsta(varsta), abonament(abonament)
+	{
+		if (cnp != NULL)
+		{
+			this->cnp = new char[strlen(cnp) + 1];
+			strcpy(this->cnp, cnp);
+		}
+		if (nrprogramari != 0 && programari != NULL)
+		{
+			this->programari = new int[nrprogramari];
+			this->nrprogramari = nrprogramari;
+			for (int i = 0; i < this->nrprogramari; i++)
+				this->programari[i] = programari[i];
+		}
+		else
+		{
+			this->programari = NULL;
+			this->nrprogramari = 0;
+		}
+	}
+
+	Pacient(const Pacient& p) : nume(p.nume), id(++nrpacienti), varsta(p.varsta), abonament(p.abonament)
+	{
+		delete[]this->cnp;
+		if (cnp != NULL)
+		{
+			this->cnp = new char[strlen(cnp) + 1];
+			strcpy(this->cnp, cnp);
+		}
+		delete[]this->programari;
+		if (p.nrprogramari != 0 && p.programari != NULL)
+		{
+			this->programari = new int[p.nrprogramari];
+			this->nrprogramari = p.nrprogramari;
+			for (int i = 0; i < this->nrprogramari; i++)
+				this->programari[i] = p.programari[i];
+		}
+		else
+		{
+			this->programari = NULL;
+			this->nrprogramari = 0;
+		}
+	}
+
+	Pacient& operator=(const Pacient& p)
+	{
+		this->nume = p.nume;
+		delete[]this->cnp;
+		if (cnp != NULL)
+		{
+			this->cnp = new char[strlen(cnp) + 1];
+			strcpy(this->cnp, cnp);
+		}
+		this->varsta = p.varsta;
+		delete[]this->programari;
+		if (p.nrprogramari != 0 && p.programari != NULL)
+		{
+			this->programari = new int[p.nrprogramari];
+			this->nrprogramari = p.nrprogramari;
+			for (int i = 0; i < this->nrprogramari; i++)
+				this->programari[i] = p.programari[i];
+		}
+		else
+		{
+			this->programari = NULL;
+			this->nrprogramari = 0;
+		}
+		this->abonament = p.abonament;
+		return *this;
+	}
+
+	void setnume(string nume)
+	{
+		if (nume != "NA")
+			this->nume = nume;
+		else
+			throw new exception;
+	}
+
+	string getnume()
+	{
+		return this->nume;
+	}
+
+	void setcnp(char* cnp)
+	{
+		if (cnp != NULL)
+		{
+			delete[]this->cnp;
+			this->cnp = new char[strlen(cnp) + 1];
+			strcpy(this->cnp, cnp);
+		}
+		else
+			this->cnp = NULL;
+	}
+
+	char* getcnp()
+	{
+		return this->cnp;
+	}
+
+	void setvarsta(int varsta)
+	{
+		if (varsta > 18)
+			this->varsta = varsta;
+		else
+			throw new exception;
+	}
+
+	int getvarsta()
+	{
+		return this->varsta;
+	}
+
+	void setprogramari(int nrprogramari, int* programari)
+	{
+		delete[]this->programari;
+		if (nrprogramari != 0 && programari != NULL)
+		{
+
+			this->programari = new int[nrprogramari];
+			this->nrprogramari = nrprogramari;
+			for (int i = 0; i < this->nrprogramari; i++)
+				this->programari[i] = programari[i];
+		}
+		else
+		{
+			this->programari = NULL;
+			this->nrprogramari = 0;
+		}
+	}
+
+	int getnrprogramari()
+	{
+		return this->nrprogramari;
+	}
+
+	int* getprogramari()
+	{
+		return this->programari;
+	}
+
+	void setabonament(bool abonament)
+	{
+		this->abonament = abonament;
+	}
+
+	bool getabonament()
+	{
+		return this->abonament;
+	}
+
+	int operator[](int index)
+	{
+		if (index >= 0 && index < this->nrprogramari)
+			return this->programari[index];
+	}
+
+	operator string()
+	{
+		return this->nume;
+	}
+
+	Pacient& operator+=(const Pacient& p)
+	{
+		this->varsta += p.varsta;
+		return *this;
+	}
+
+	bool operator>(const Pacient& p)
+	{
+		if (this->nrprogramari > p.nrprogramari)
+			return true;
+		else
+			return false;
+	}
+
+	Pacient& operator++(int i)
+	{
+		this->varsta++;
+		return *this;
+	}
+
+	Pacient operator++()
+	{
+		Pacient copie = *this;
+		this->varsta++;
+		return copie;
+	}
+
+
+	Pacient operator!()
+	{
+		Pacient rez = *this;
+		rez.nrprogramari = 0;
+		delete[] rez.programari;
+		rez.programari = NULL;
+		return rez;
+	}
+
+	bool operator==(const Pacient& p)
+	{
+		if (this->nrprogramari == p.nrprogramari)
+			return true;
+		else
+			return false;
+
+	}
+
+	void writeToFile(fstream& file)
+	{
+		int lg = this->nume.length() + 1;
+		file.write((char*)&lg, sizeof(int));
+		file.write(this->nume.data(), lg);
+		file.write((char*)&this->id, sizeof(int));
+		file.write((char*)&this->cnp, sizeof(this->cnp));
+		file.write((char*)&this->varsta, sizeof(int));
+		file.write((char*)&this->nrprogramari, sizeof(int));
+		for (int i = 0; i < this->nrprogramari; i++)
+			file.write((char*)&this->programari[i], sizeof(int));
+		file.write((char*)&this->abonament, sizeof(bool));
+	}
+
+	void readFromFile(fstream& file)
+	{
+
+		int lg = 0;
+		file.read((char*)&lg, sizeof(int));
+		char* buffer = new char[lg];
+		file.read(buffer, lg);
+		this->nume = buffer;
+		delete[] buffer;
+		file.read((char*)&this->id, sizeof(int));
+		file.read((char*)&this->cnp, sizeof(cnp));
+		file.read((char*)&this->varsta, sizeof(int));
+		file.read((char*)&this->nrprogramari, sizeof(int));
+		delete[] this->programari;
+		if (this->nrprogramari > 0)
+		{
+			this->programari = new int[this->nrprogramari];
+			for (int i = 0; i < this->nrprogramari; i++)
+				file.read((char*)&this->programari[i], sizeof(int));
+		}
+		else
+		{
+			this->nrprogramari = 0;
+			this->programari = NULL;
+		}
+		file.read((char*)&this->abonament, sizeof(bool));
+
+	}
+
+
+	void afisare()
+	{
+		cout << endl;
+		cout << "nume: " << this->nume << endl;
+		cout << "id: " << this->id << endl;
+		if (this->cnp != NULL)
+			cout << "cnp: " << this->cnp << endl;
+
+		else
+			cout << "-" << endl;
+		cout << "varsta: " << this->varsta << endl;
+		if (this->nrprogramari != 0 && this->programari != NULL)
+		{
+			cout << "nr programari: " << this->nrprogramari << endl;
+			for (int i = 0; i < this->nrprogramari; i++)
+				cout << this->programari[i] << " ";
+		}
+		else
+			cout << "-" << endl;
+		cout << "abonament: ";
+		if (this->abonament == 1)
+			cout << "da";
+		else
+			cout << "nu";
+		cout << endl;
+	}
+
+	~Pacient()
+	{
+		delete[]this->cnp;
+		delete[]this->programari;
+		nrpacienti--;
+	}
+
+	friend ostream& operator<<(ostream& out, const Pacient& p);
+	friend istream& operator>>(istream& in, Pacient& p);
+
+};
+
+
+int Pacient::nrpacienti = 0;
+
+ostream& operator<<(ostream& out, const Pacient& p)
+{
+	out << endl;
+	out << "nume: " << p.nume << endl;
+	out << "id: " << p.id << endl;
+	if (p.cnp != NULL)
+		out << "cnp: " << p.cnp << endl;
+
+	else
+		out << "-" << endl;
+	out << "varsta: " << p.varsta << endl;
+	if (p.nrprogramari != 0 && p.programari != NULL)
+	{
+		out << "nr programari: " << p.nrprogramari << endl;
+		for (int i = 0; i < p.nrprogramari; i++)
+			out << p.programari[i] << " ";
+	}
+	else
+		out << "-" << endl;
+	out << "abonament: ";
+	if (p.abonament == 1)
+		out << "da";
+	else
+		out << "nu";
+	out << endl;
+	return out;
+
+}
+
+istream& operator>>(istream& in, Pacient& p)
+{
+	cout << "nume:";
+	getline(in, p.nume, '\n');
+	cout << "varsta: ";
+	in >> p.varsta;
+	cout << "nr porgramri: ";
+	in >> p.nrprogramari;
+	if (p.nrprogramari != 0)
+	{
+		delete[]p.programari;
+		p.programari = new int[p.nrprogramari];
+		for (int i = 0; i < p.nrprogramari; i++)
+		{
+			cout << "programari: ";
+			in >> p.programari[i];
+		}
+	}
+	else
+	{
+		p.nrprogramari = 0;
+		p.programari = NULL;
+	}
+	cout << "abonament";
+	in >> p.abonament;
+	cout << "cnp: ";
+	delete[]p.cnp;
+	in >> p.cnp;
+	if (p.cnp != NULL)
+	{
+		p.cnp = new char[strlen(p.cnp) + 1];
+		strcpy(p.cnp, p.cnp);
+	}
+	else
+		p.cnp = NULL;
+	return in;
+
+}
+
+
+class Medic :public IFile
+{
+private:
+	string nume;
+	const int id;
+	bool primar;
+	string specializare;
+	int idspecializare;
+	float salariu;
+	int nrinterventii;
+	float* pretinterventii;//pret interventii in functie de tip
+	static int nrangajati;
+public:
+
+	Medic() :nume("NA"), id(++nrangajati + 100), primar(0), specializare("NA"), idspecializare(0), salariu(0), nrinterventii(0), pretinterventii(NULL)
+	{
+
+	}
+
+	Medic(string nume, bool primar, string specializare, int idspecializare, float salariu, int nrinterventii, float* pretinterventii) : nume(nume), id(++nrangajati + 100), primar(primar), specializare(specializare), idspecializare(idspecializare), salariu(salariu)
+	{
+		if (nrinterventii != 0 && pretinterventii != NULL)
+		{
+			this->pretinterventii = new float[nrinterventii];
+			this->nrinterventii = nrinterventii;
+			for (int i = 0; i < this->nrinterventii; i++)
+				this->pretinterventii[i] = pretinterventii[i];
+		}
+		else
+		{
+			this->pretinterventii = NULL;
+			this->nrinterventii = 0;
+		}
+	}
+
+	Medic(string nume, string specializare) :nume(nume), id(++nrangajati + 100), specializare(specializare)
+	{
+		this->primar = 0;
+		this->idspecializare = 0;
+		this->salariu = 0;
+		this->nrinterventii = 0;
+		this->pretinterventii = NULL;
+
+	}
+
+	Medic(const Medic& m) :nume(m.nume), id(++nrangajati + 100), primar(m.primar), specializare(m.specializare), idspecializare(m.idspecializare), salariu(m.salariu)
+	{
+		delete[]this->pretinterventii;
+		if (m.nrinterventii != 0 && m.pretinterventii != NULL)
+		{
+			this->pretinterventii = new float[m.nrinterventii];
+			this->nrinterventii = m.nrinterventii;
+			for (int i = 0; i < this->nrinterventii; i++)
+				this->pretinterventii[i] = m.pretinterventii[i];
+		}
+		else
+		{
+			this->pretinterventii = NULL;
+			this->nrinterventii = 0;
+		}
+	}
+
+	Medic& operator=(const Medic& m)
+	{
+		this->nume = m.nume;
+		this->primar = m.primar;
+		this->specializare = m.specializare;
+		this->idspecializare = m.idspecializare;
+		this->salariu = m.salariu;
+		delete[]this->pretinterventii;
+		if (m.nrinterventii != 0 && m.pretinterventii != NULL)
+		{
+			this->pretinterventii = new float[m.nrinterventii];
+			this->nrinterventii = m.nrinterventii;
+			for (int i = 0; i < this->nrinterventii; i++)
+				this->pretinterventii[i] = m.pretinterventii[i];
+		}
+		else
+		{
+			this->pretinterventii = NULL;
+			this->nrinterventii = 0;
+		}
+		return *this;
+	}
+
+	void setnume(string nume)
+	{
+		if (nume != "NA")
+			this->nume = nume;
+		else
+			throw new exception;
+
+	}
+
+	string getnume()
+	{
+		return this->nume;
+
+	}
+
+	void setprimar(bool primar)
+	{
+		this->primar = primar;
+	}
+
+	bool getprimar()
+	{
+		return this->primar;
+	}
+
+	void setspecializare(string specializare)
+	{
+		this->specializare = specializare;
+	}
+
+	string getspecializare()
+	{
+		return this->specializare;
+	}
+
+	void setidspec(int idspecializare)
+	{
+		if (idspecializare > 0)
+			this->idspecializare = idspecializare;
+		else
+			throw new exception;
+
+	}
+
+	int getidspec()
+	{
+		return this->idspecializare;
+	}
+
+	void setsalariu(float salariu)
+	{
+		if (salariu > 0)
+			this->salariu = salariu;
+		else
+			throw new exception;
+
+	}
+
+	float getsalariu()
+	{
+		return this->salariu;
+	}
+
+	void setinterventii(int nrinterventii, float* pretinterventii)
+	{
+		delete[]this->pretinterventii;
+		if (nrinterventii != 0 && pretinterventii != NULL)
+		{
+			this->pretinterventii = new float[nrinterventii];
+			this->nrinterventii = nrinterventii;
+			for (int i = 0; i < this->nrinterventii; i++)
+				this->pretinterventii[i] = pretinterventii[i];
+		}
+		else
+		{
+			this->pretinterventii = NULL;
+			this->nrinterventii = 0;
+		}
+	}
+
+	int getnrinterventii()
+	{
+		return this->nrinterventii;
+	}
+
+	float* getpretinterventii()
+	{
+		return this->pretinterventii;
+	}
+
+	float operator[](int index)
+	{
+		if (index >= 0 && index < this->nrinterventii)
+			return this->pretinterventii[index];
+	}
+
+	operator string()
+	{
+		return this->nume;
+	}
+
+	bool operator>(const Medic& m)
+	{
+		if (this->salariu > m.salariu)
+			return true;
+		else
+			return false;
+	}
+
+	Medic& operator--(int i)
+	{
+		this->nrinterventii--;
+		return *this;
+	}
+
+	Medic& operator*=(float val)
+	{
+		this->salariu *= val;
+		return *this;
+	}
+
+	Medic operator--()
+	{
+		Medic copie = *this;
+		this->nrinterventii--;
+		return copie;
+	}
+
+	bool operator==(const Medic& m)
+	{
+		if (this->nrinterventii == m.nrinterventii)
+			return true;
+		else
+			return false;
+	}
+
+	Medic operator!()
+	{
+		Medic rez = *this;
+		rez.nrinterventii = 0;
+		delete[]rez.pretinterventii;
+		rez.pretinterventii = NULL;
+		return rez;
+	}
+
+	virtual float calculsalariu()
+	{
+		return this->salariu;
+	}
+
+
+
+	void writeToFile(fstream& file)
+	{
+		int lg = this->nume.length() + 1;
+		file.write((char*)&lg, sizeof(int));
+		file.write(this->nume.data(), lg);
+		file.write((char*)&this->id, sizeof(int));
+		file.write((char*)&this->primar, sizeof(bool));
+		int lgm = this->specializare.length() + 1;
+		file.write((char*)&lgm, sizeof(int));
+		file.write(this->specializare.data(), lgm);
+		file.write((char*)&this->idspecializare, sizeof(int));
+		file.write((char*)&this->salariu, sizeof(float));
+		file.write((char*)&this->nrinterventii, sizeof(int));
+		for (int i = 0; i < this->nrinterventii; i++)
+			file.write((char*)&this->pretinterventii[i], sizeof(float));
+	}
+
+	void readFromFile(fstream& file)
+	{
+		int lg = 0;
+		file.read((char*)&lg, sizeof(int));
+		char* buffer = new char[lg];
+		file.read(buffer, lg);
+		this->nume = buffer;
+		delete[] buffer;
+		file.read((char*)&this->id, sizeof(int));
+		file.read((char*)&this->primar, sizeof(bool));
+		int lgm = 0;
+		file.read((char*)&lgm, sizeof(int));
+		char* buffer2 = new char[lgm];
+		file.read(buffer2, lgm);
+		this->specializare = buffer2;
+		delete[] buffer2;
+		file.read((char*)&this->idspecializare, sizeof(int));
+		file.read((char*)&this->salariu, sizeof(float));
+		file.read((char*)&this->nrinterventii, sizeof(int));
+		delete[] this->pretinterventii;
+		if (this->nrinterventii > 0)
+		{
+			this->pretinterventii = new float[this->nrinterventii];
+			for (int i = 0; i < this->nrinterventii; i++)
+				file.read((char*)&this->pretinterventii[i], sizeof(float));
+		}
+		else
+		{
+			this->nrinterventii = 0;
+			this->pretinterventii = NULL;
+		}
+	}
+
+	void afisare()
+	{
+		cout << endl;
+		cout << "nume: " << this->nume << endl;
+		cout << "id: " << this->id << endl;
+		cout << "primar: ";
+		if (this->primar == 1)
+			cout << "da" << endl;
+		else
+			cout << "nu" << endl;
+		cout << "specializare: " << this->specializare << endl;
+		cout << "id specializare: " << this->idspecializare << endl;
+		cout << "salariu: " << this->salariu << endl;
+		if (this->nrinterventii != 0 && this->pretinterventii != NULL)
+		{
+			cout << "nr interventii: " << this->nrinterventii << endl;
+			for (int i = 0; i < this->nrinterventii; i++)
+				cout << this->pretinterventii[i] << " ";
+		}
+		else
+			cout << "-" << endl;
+	}
+
+	~Medic()
+	{
+		delete[]this->pretinterventii;
+		nrangajati--;
+	}
+
+	friend ostream& operator<<(ostream& out, const Medic& m);
+	friend istream& operator>>(istream& in, Medic& m);
+
+};
+
+int Medic::nrangajati = 0;
+
+ostream& operator<<(ostream& out, const Medic& m)
+{
+	out << endl;
+	out << "nume: " << m.nume << endl;
+	out << "id: " << m.id << endl;
+	out << "primar: ";
+	if (m.primar == 1)
+		out << "da" << endl;
+	else
+		out << "nu" << endl;
+	out << "specializare: " << m.specializare << endl;
+	out << "id specializare: " << m.idspecializare << endl;
+	out << "salariu: " << m.salariu << endl;
+	if (m.nrinterventii != 0 && m.pretinterventii != NULL)
+	{
+		out << "nr interventii: " << m.nrinterventii << endl;
+		for (int i = 0; i < m.nrinterventii; i++)
+			out << m.pretinterventii[i] << " ";
+	}
+	else
+		out << "-" << endl;
+	return out;
+}
+
+istream& operator>>(istream& in, Medic& m)
+{
+	cout << "nume: ";
+	getline(in, m.nume, '\n');
+	cout << "primar: ";
+	in >> m.primar;
+	cout << "specializare: ";
+	in >> m.specializare;
+	cout << "id specializare: ";
+	in >> m.idspecializare;
+	cout << "salariu: ";
+	in >> m.salariu;
+	cout << "nr interventii: ";
+	in >> m.nrinterventii;
+	delete[]m.pretinterventii;
+	if (m.nrinterventii != 0)
+	{
+		m.pretinterventii = new float[m.nrinterventii];
+		for (int i = 0; i < m.nrinterventii; i++)
+		{
+			cout << "pret: ";
+			in >> m.pretinterventii[i];
+		}
+	}
+	else
+	{
+		m.nrinterventii = 0;
+		m.pretinterventii = NULL;
+	}
+	return in;
+
+}
+
+class Proceduri :public IFile
+{
+private:
+	const int idproc;
+	char* denumire;
+	string specializarepro;
+	float pret;
+	int nrsali;
+	int* sali;//in ce sali e posibila interventia
+	bool anestezie;
+	static int nrproc;
+public:
+
+	Proceduri() :idproc(++nrproc), denumire(NULL), specializarepro("NA"), pret(0), nrsali(0), sali(NULL), anestezie(0)
+	{
+
+	}
+
+	Proceduri(char* denumire, string specializarepro, float pret, int nrsali, int* sali, bool anestezie) :idproc(++nrproc), specializarepro(specializarepro), pret(pret), anestezie(anestezie)
+	{
+		this->denumire = new char[strlen(denumire) + 1];
+		strcpy(this->denumire, denumire);
+		if (nrsali != 0 && sali != NULL)
+		{
+			this->sali = new int[nrsali];
+			this->nrsali = nrsali;
+			for (int i = 0; i < this->nrsali; i++)
+				this->sali[i] = sali[i];
+		}
+		else
+		{
+			this->sali = NULL;
+			this->nrsali = 0;
+		}
+	}
+
+	Proceduri(char* denumire, float pret) : pret(pret), idproc(++nrproc)
+	{
+		this->denumire = new char[strlen(denumire) + 1];
+		strcpy(this->denumire, denumire);
+		this->specializarepro = "NA";
+		this->nrsali = 0;
+		this->sali = NULL;
+		this->anestezie = 0;
+	}
+
+	Proceduri(const Proceduri& p) : idproc(++nrproc), specializarepro(p.specializarepro), pret(p.pret), anestezie(p.anestezie)
+	{
+		delete[]this->denumire;
+		this->denumire = new char[strlen(p.denumire) + 1];
+		strcpy(this->denumire, p.denumire);
+		if (p.nrsali != 0 && p.sali != NULL)
+		{
+			delete[]this->sali;
+			this->sali = new int[p.nrsali];
+			this->nrsali = p.nrsali;
+			for (int i = 0; i < this->nrsali; i++)
+				this->sali[i] = p.sali[i];
+		}
+		else
+		{
+			this->sali = NULL;
+			this->nrsali = 0;
+		}
+	}
+
+	Proceduri& operator=(const Proceduri& p)
+	{
+		delete[]this->denumire;
+		this->denumire = new char[strlen(p.denumire) + 1];
+		strcpy(this->denumire, p.denumire);
+		this->specializarepro = p.specializarepro;
+		this->pret = p.pret;
+		if (p.nrsali != 0 && p.sali != NULL)
+		{
+			delete[]this->denumire;
+			this->sali = new int[p.nrsali];
+			this->nrsali = p.nrsali;
+			for (int i = 0; i < this->nrsali; i++)
+				this->sali[i] = p.sali[i];
+		}
+		else
+		{
+			this->sali = NULL;
+			this->nrsali = 0;
+		}
+		this->anestezie = p.anestezie;
+		return *this;
+	}
+
+	void setdenumire(char* denumire)
+	{
+		if (denumire != NULL)
+		{
+			delete[]this->denumire;
+			this->denumire = new char[strlen(denumire) + 1];
+			strcpy(this->denumire, denumire);
+		}
+		else
+			throw new exception;
+	}
+
+	char* getdenumire()
+	{
+		return this->denumire;
+	}
+
+	void setspecializarepro(string specializare)
+	{
+		this->specializarepro = specializarepro;
+	}
+
+	string getspecializarepro()
+	{
+		return this->specializarepro;
+	}
+
+
+	void setpret(float pret)
+	{
+		if (pret > 0)
+
+			this->pret = pret;
+		else
+			throw new exception;
+
+	}
+
+	float getpret()
+	{
+		return this->pret;
+	}
+
+	void setsali(int nrsali, int* sali)
+	{
+		delete[]this->sali;
+		if (nrsali != 0 && sali != NULL)
+		{
+			this->sali = new int[nrsali];
+			this->nrsali = nrsali;
+			for (int i = 0; i < this->nrsali; i++)
+				this->sali[i] = sali[i];
+		}
+		else
+		{
+			this->sali = NULL;
+			this->nrsali = 0;
+		}
+	}
+
+	int getnrsali()
+	{
+		return this->nrsali;
+	}
+
+	int* getsali()
+	{
+		return this->sali;
+	}
+
+	void setanestezie(bool anestezie)
+	{
+		this->anestezie = anestezie;
+	}
+
+	bool getanestezie()
+	{
+		return this->anestezie;
+	}
+
+	int operator[](int index)
+	{
+		if (index >= 0 && index < this->nrsali)
+			return this->sali[index];
+	}
+
+	explicit operator int()
+	{
+		return this->idproc;
+	}
+
+	bool operator>=(const Proceduri& pr)
+	{
+		if (this->pret >= pr.pret)
+			return true;
+		else
+			return false;
+	}
+
+	Proceduri& operator/=(float x)
+	{
+		this->pret /= x;
+		return *this;
+	}
+
+	bool operator==(const Proceduri& pr)
+	{
+		if (this->nrsali == pr.nrsali)
+			return true;
+		else
+			return false;
+	}
+
+	Proceduri& operator--(int i)
+	{
+		this->nrsali--;
+		return *this;
+	}
+
+	Proceduri operator--()
+	{
+		Proceduri copie = *this;
+		this->nrsali--;
+		return copie;
+	}
+
+	Proceduri operator!()
+	{
+		Proceduri rez = *this;
+		rez.nrsali = 0;
+		delete[]rez.sali;
+		rez.sali = NULL;
+		return rez;
+	}
+
+	virtual float calculPret()
+	{
+		if (this->anestezie == 1)
+			return this->pret + pret * 0.1f;
+		else
+			return this->pret;
+	}
+
+	void writeToFile(fstream& file)
+	{
+		file.write((char*)&this->idproc, sizeof(int));
+		file.write((char*)&this->denumire, sizeof(this->denumire));
+		int lg = this->specializarepro.length() + 1;
+		file.write((char*)&lg, sizeof(int));
+		file.write(this->specializarepro.data(), lg);
+		file.write((char*)&this->pret, sizeof(float));
+		file.write((char*)&this->nrsali, sizeof(int));
+		for (int i = 0; i < this->nrsali; i++)
+			file.write((char*)&this->sali[i], sizeof(int));
+		file.write((char*)&this->anestezie, sizeof(bool));
+	}
+	void readFromFile(fstream& file)
+	{
+		file.read((char*)&this->idproc, sizeof(int));
+		file.read((char*)&this->denumire, sizeof(this->denumire));
+		int lg = 0;
+		file.read((char*)&lg, sizeof(int));
+		char* buffer = new char[lg];
+		file.read(buffer, lg);
+		this->specializarepro = buffer;
+		delete[] buffer;
+		file.read((char*)&this->pret, sizeof(float));
+		file.read((char*)&this->nrsali, sizeof(int));
+		delete[] this->sali;
+		if (this->nrsali > 0)
+		{
+			this->sali = new int[this->nrsali];
+			for (int i = 0; i < this->nrsali; i++)
+				file.read((char*)&this->sali[i], sizeof(int));
+		}
+		else
+		{
+			this->nrsali = 0;
+			this->sali = NULL;
+		}
+		file.read((char*)&this->anestezie, sizeof(bool));
+	}
+
+	void afisare()
+	{
+		cout << endl;
+		cout << "id procedura: " << this->idproc << endl;
+		cout << "denumire: " << this->denumire << endl;
+		cout << "specializare: " << this->specializarepro << endl;
+		cout << "pret: " << this->pret << endl;
+		if (this->nrsali != 0 && this->sali != NULL)
+		{
+			cout << "nr sali: " << this->nrsali << endl;
+			cout << "sali: ";
+			for (int i = 0; i < this->nrsali; i++)
+				cout << this->sali[i] << " ";
+		}
+		else
+			cout << "-" << endl;
+		cout << "anestezie: ";
+		if (this->anestezie == 1)
+			cout << "da" << endl;
+		else
+			cout << "nu" << endl;
+	}
+	~Proceduri()
+	{
+		delete[]this->denumire;
+		delete[]this->sali;
+		nrproc--;
+	}
+
+	friend ostream& operator<<(ostream& out, const Proceduri& pr);
+	friend istream& operator>>(istream& in, Proceduri& pr);
+
+};
+
+int Proceduri::nrproc = 0;
+
+ostream& operator<<(ostream& out, const Proceduri& pr)
+{
+	out << endl;
+	out << "id procedura: " << pr.idproc << endl;
+	out << "denumire: " << pr.denumire << endl;
+	out << "specializare: " << pr.specializarepro << endl;
+	out << "pret: " << pr.pret << endl;
+	if (pr.nrsali != 0 && pr.sali != NULL)
+	{
+		out << "nr sali: " << pr.nrsali << endl;
+		out << "sali: ";
+		for (int i = 0; i < pr.nrsali; i++)
+			out << pr.sali[i] << " ";
+	}
+	else
+		out << "-" << endl;
+	out << "anestezie: ";
+	if (pr.anestezie == 1)
+		out << "da" << endl;
+	else
+		out << "nu" << endl;
+	return out;
+
+}
+
+istream& operator>>(istream& in, Proceduri& pr)
+{
+	//cout << "denumire: ";
+	cout << "specializare: ";
+	getline(in, pr.specializarepro, '\n');
+	cout << "pret: ";
+	in >> pr.pret;
+	cout << "nr sali: ";
+	in >> pr.nrsali;
+	delete[]pr.sali;
+	if (pr.nrsali != 0)
+	{
+		pr.sali = new int[pr.nrsali];
+		cout << "sali: ";
+		for (int i = 0; i < pr.nrsali; i++)
+			in >> pr.sali[i];
+	}
+	else
+	{
+		pr.nrsali = 0;
+		pr.sali = NULL;
+	}
+	cout << "anestezie: ";
+	in >> pr.anestezie;
+	return in;
+}
+
+class Ambulante :public IFile
+{
+private:
+	const int id;
+	int anfabricatie;
+	float pretachizitie;
+	int nralimentari;
+	int* alimentari;
+	static int nrambulante;
+
+public:
+
+	Ambulante() :id(++nrambulante), anfabricatie(0), pretachizitie(0), nralimentari(0), alimentari(NULL)
+	{
+
+	}
+
+	Ambulante(int anfabricatie, float pretachizitie, int nralimentari, int* alimentari) :id(++nrambulante), anfabricatie(anfabricatie), pretachizitie(pretachizitie)
+	{
+		if (nralimentari != 0 && alimentari != NULL)
+		{
+			this->alimentari = new int[nralimentari];
+			this->nralimentari = nralimentari;
+			for (int i = 0; i < this->nralimentari; i++)
+				this->alimentari[i] = alimentari[i];
+		}
+		else
+		{
+			this->nralimentari = 0;
+			this->alimentari = NULL;
+		}
+	}
+
+	Ambulante(int id) :id(id)
+	{
+		this->anfabricatie = 0;
+		this->pretachizitie = 0;
+		this->nralimentari = 0;
+		this->alimentari = NULL;
+	}
+
+	Ambulante(const Ambulante& a) :id(++nrambulante), anfabricatie(a.anfabricatie), pretachizitie(a.pretachizitie)
+	{
+		delete[]this->alimentari;
+		if (a.nralimentari != 0 && a.alimentari != NULL)
+		{
+			this->alimentari = new int[a.nralimentari];
+			this->nralimentari = a.nralimentari;
+			for (int i = 0; i < this->nralimentari; i++)
+				this->alimentari[i] = a.alimentari[i];
+		}
+		else
+		{
+			this->nralimentari = 0;
+			this->alimentari = NULL;
+		}
+	}
+
+	Ambulante& operator=(const Ambulante& a)
+	{
+		this->anfabricatie = a.anfabricatie;
+		this->pretachizitie = a.pretachizitie;
+		delete[]this->alimentari;
+		if (a.nralimentari != 0 && a.alimentari != NULL)
+		{
+			this->alimentari = new int[a.nralimentari];
+			this->nralimentari = a.nralimentari;
+			for (int i = 0; i < this->nralimentari; i++)
+				this->alimentari[i] = a.alimentari[i];
+		}
+		else
+		{
+			this->nralimentari = 0;
+			this->alimentari = NULL;
+		}
+		return *this;
+	}
+
+	void setan(int anfabricatie)
+	{
+		if (anfabricatie > 2000)
+			this->anfabricatie = anfabricatie;
+		else
+			throw new exception;
+	}
+
+	int getan()
+	{
+		return this->anfabricatie;
+	}
+
+	void setpretachizitie(float pretachizitie)
+	{
+		if (pretachizitie > 0)
+			this->pretachizitie = pretachizitie;
+		else
+			throw new exception;
+
+	}
+
+	float getpretachizitie()
+	{
+		return this->pretachizitie;
+	}
+
+	void setalimentari(int nralimentari, int* alimentari)
+	{
+		delete[]this->alimentari;
+		if (nralimentari != 0 && alimentari != NULL)
+		{
+			this->alimentari = new int[nralimentari];
+			this->nralimentari = nralimentari;
+			for (int i = 0; i < this->nralimentari; i++)
+				this->alimentari[i] = alimentari[i];
+		}
+		else
+		{
+			this->nralimentari = 0;
+			this->alimentari = NULL;
+		}
+	}
+
+	int getnralimentari()
+	{
+		return this->nralimentari;
+	}
+
+	int* getalimentari()
+	{
+		return this->alimentari;
+	}
+
+	int operator[](int index)
+	{
+		if (index >= 0 && index < nralimentari)
+			return this->alimentari[index];
+		else
+			cout << "-";
+	}
+
+	operator int()
+	{
+		return this->id;
+	}
+
+	bool operator<=(const Ambulante& a)
+	{
+		if (this->nralimentari <= a.nralimentari)
+			return true;
+		else
+			return false;
+	}
+
+	Ambulante& operator-=(int x)
+	{
+		this->nralimentari -= x;
+		return *this;
+	}
+
+	bool operator==(const Ambulante& a)
+	{
+		if (this->nralimentari == a.nralimentari)
+			return true;
+		else
+			return false;
+	}
+
+	Ambulante& operator++(int i)
+	{
+		this->anfabricatie++;
+		return *this;
+	}
+
+	Ambulante operator++()
+	{
+		Ambulante copie = *this;
+		this->anfabricatie++;
+		return copie;
+	}
+
+	Ambulante operator!()
+	{
+		Ambulante rez = *this;
+		rez.nralimentari = 0;
+		delete[]rez.alimentari;
+		rez.alimentari = NULL;
+		return rez;
+	}
+
+	void writeToFile(fstream& file)
+	{
+		file.write((char*)&this->id, sizeof(int));
+		file.write((char*)&this->anfabricatie, sizeof(int));
+		file.write((char*)&this->pretachizitie, sizeof(float));
+		file.write((char*)&this->nralimentari, sizeof(int));
+		for (int i = 0; i < this->nralimentari; i++)
+			file.write((char*)&this->alimentari[i], sizeof(int));
+	}
+	void readFromFile(fstream& file)
+	{
+		file.read((char*)&this->id, sizeof(int));
+		file.read((char*)&this->anfabricatie, sizeof(int));
+		file.read((char*)&this->pretachizitie, sizeof(float));
+		file.read((char*)&this->nralimentari, sizeof(int));
+		delete[] this->alimentari;
+		if (this->nralimentari > 0)
+		{
+			this->alimentari = new int[this->nralimentari];
+			for (int i = 0; i < this->nralimentari; i++)
+				file.read((char*)&this->alimentari[i], sizeof(int));
+		}
+		else
+		{
+			this->nralimentari = 0;
+			this->alimentari = NULL;
+		}
+	}
+
+	void afisare()
+	{
+		cout << endl;
+		cout << "an fabricatie: " << this->anfabricatie << endl;
+		cout << "pret achizitie: " << this->pretachizitie << endl;
+		cout << "id: " << this->id << endl;
+		if (this->nralimentari != 0 && this->alimentari != NULL)
+		{
+			cout << "nr alimentari: " << this->nralimentari << endl;
+			cout << "Alimentari: ";
+			for (int i = 0; i < this->nralimentari; i++)
+				cout << this->alimentari[i] << " ";
+		}
+		else
+			cout << "-";
+		cout << endl;
+	}
+
+	~Ambulante()
+	{
+		delete[]this->alimentari;
+		nrambulante--;
+	}
+
+	friend ostream& operator<<(ostream& out, const Ambulante& a);
+	friend istream& operator>>(istream& in, Ambulante& a);
+
+};
+
+int Ambulante::nrambulante = 0;
+
+ostream& operator<<(ostream& out, const Ambulante& a)
+{
+	out << endl;
+	out << "an fabricatie: " << a.anfabricatie << endl;
+	out << "pret achizitie: " << a.pretachizitie << endl;
+	out << "id: " << a.id << endl;
+	if (a.nralimentari != 0 && a.alimentari != NULL)
+	{
+		out << "nr alimentari: " << a.nralimentari << endl;
+		out << "Alimentari: ";
+		for (int i = 0; i < a.nralimentari; i++)
+			out << a.alimentari[i] << " ";
+	}
+	else
+		out << "-";
+	out << endl;
+	return out;
+
+}
+
+istream& operator>>(istream& in, Ambulante& a)
+{
+
+	cout << "an fabricatie: ";
+	in >> a.anfabricatie;
+	cout << "pret achizitie: ";
+	in >> a.pretachizitie;
+	cout << "nr alimentari: ";
+	in >> a.nralimentari;
+	delete[]a.alimentari;
+	if (a.nralimentari != 0)
+	{
+		a.alimentari = new int[a.nralimentari];
+		cout << "Alimentari: ";
+		for (int i = 0; i < a.nralimentari; i++)
+			in >> a.alimentari[i];
+	}
+	else
+	{
+		a.nralimentari = 0;
+		a.alimentari = NULL;
+	}
+
+	return in;
+}
+
+
+class Etaj :public IFile
+{
+private:
+	const int id;
+	int nrpacientiinternati;
+	int* idinternati;
+	static int nretaje;
+	bool etajcovid;
+public:
+
+	Etaj() :id(++nretaje), nrpacientiinternati(0), idinternati(NULL), etajcovid(0)
+	{
+
+	}
+
+	Etaj(int nrpacientiinternati, int* idinternati, bool etajcovid) : id(++nretaje), etajcovid(etajcovid)
+	{
+		if (nrpacientiinternati != 0 && idinternati != NULL)
+		{
+			this->idinternati = new int[nrpacientiinternati];
+			this->nrpacientiinternati = nrpacientiinternati;
+			for (int i = 0; i < this->nrpacientiinternati; i++)
+				this->idinternati[i] = idinternati[i];
+		}
+		else
+		{
+			this->nrpacientiinternati = 0;
+			this->idinternati = NULL;
+		}
+	}
+
+	Etaj(int id) :id(id)
+	{
+		this->nrpacientiinternati = 0;
+		this->idinternati = NULL;
+		this->etajcovid = 0;
+	}
+
+	Etaj(const Etaj& e) :id(++nretaje), etajcovid(e.etajcovid)
+	{
+		delete[]this->idinternati;
+		if (e.nrpacientiinternati != 0 && e.idinternati != NULL)
+		{
+			this->idinternati = new int[e.nrpacientiinternati];
+			this->nrpacientiinternati = e.nrpacientiinternati;
+			for (int i = 0; i < this->nrpacientiinternati; i++)
+				this->idinternati[i] = e.idinternati[i];
+		}
+		else
+		{
+			this->nrpacientiinternati = 0;
+			this->idinternati = NULL;
+		}
+	}
+
+	Etaj& operator=(const Etaj& e)
+	{
+		delete[]this->idinternati;
+		if (e.nrpacientiinternati != 0 && e.idinternati != NULL)
+		{
+			this->idinternati = new int[e.nrpacientiinternati];
+			this->nrpacientiinternati = e.nrpacientiinternati;
+			for (int i = 0; i < this->nrpacientiinternati; i++)
+				this->idinternati[i] = e.idinternati[i];
+		}
+		else
+		{
+			this->nrpacientiinternati = 0;
+			this->idinternati = NULL;
+		}
+		this->etajcovid = e.etajcovid;
+		return *this;
+	}
+
+	void setpacientiinternati(int nrpacientiinternati, int* idinternati)
+	{
+		delete[]this->idinternati;
+		if (nrpacientiinternati != 0 && idinternati != NULL)
+		{
+			this->idinternati = new int[nrpacientiinternati];
+			this->nrpacientiinternati = nrpacientiinternati;
+			for (int i = 0; i < this->nrpacientiinternati; i++)
+				this->idinternati[i] = idinternati[i];
+		}
+		else
+		{
+			this->nrpacientiinternati = 0;
+			this->idinternati = NULL;
+		}
+	}
+
+	int getnrpacientiinternati()
+	{
+		return this->nrpacientiinternati;
+	}
+
+	int* getidinternati()
+	{
+		return this->idinternati;
+	}
+
+	void setetajcovid(bool etajcovid)
+	{
+		this->etajcovid = etajcovid;
+	}
+
+	bool getetajcovid()
+	{
+		return this->etajcovid;
+	}
+
+
+
+	int operator[](int index)
+	{
+		if (index >= 0 && index < nrpacientiinternati)
+			return this->idinternati[index];
+	}
+
+	operator int()
+	{
+		return this->id;
+	}
+
+	bool operator<(const Etaj& e)
+	{
+		if (this->nrpacientiinternati < e.nrpacientiinternati)
+			return true;
+		else
+			return false;
+	}
+
+	Etaj& operator-=(int x)
+	{
+		this->nrpacientiinternati -= x;
+		return *this;
+	}
+
+	bool operator==(const Etaj& e)
+	{
+		if (this->etajcovid == e.etajcovid)
+			return true;
+		else
+			return false;
+	}
+
+	Etaj& operator--(int i)
+	{
+		this->nrpacientiinternati--;
+		return *this;
+	}
+
+	Etaj operator--()
+	{
+		Etaj copie = *this;
+		this->nrpacientiinternati--;
+		return copie;
+	}
+
+	Etaj operator!()
+	{
+		Etaj rez = *this;
+		rez.nrpacientiinternati = 0;
+		delete[]rez.idinternati;
+		rez.idinternati = NULL;
+		return rez;
+	}
+
+	void writeToFile(fstream& file)
+	{
+		file.write((char*)&this->id, sizeof(int));
+		file.write((char*)&this->nrpacientiinternati, sizeof(int));
+		for (int i = 0; i < this->nrpacientiinternati; i++)
+			file.write((char*)&this->idinternati[i], sizeof(int));
+		file.write((char*)&this->etajcovid, sizeof(bool));
+	}
+	void readFromFile(fstream& file)
+	{
+		file.read((char*)&this->id, sizeof(int));
+		file.read((char*)&this->nrpacientiinternati, sizeof(int));
+		delete[] this->idinternati;
+		if (this->nrpacientiinternati > 0)
+		{
+			this->idinternati = new int[this->nrpacientiinternati];
+			for (int i = 0; i < this->nrpacientiinternati; i++)
+				file.read((char*)&this->idinternati[i], sizeof(int));
+		}
+		else
+		{
+			this->nrpacientiinternati = 0;
+			this->idinternati = NULL;
+		}
+		file.read((char*)&this->etajcovid, sizeof(bool));
+	}
+
+	void afisare()
+	{
+		cout << endl;
+		cout << "id: " << this->id << endl;
+		if (this->nrpacientiinternati != 0 && this->idinternati != NULL)
+		{
+			cout << "nr pacienti: " << this->nrpacientiinternati << endl;
+			cout << "id pacienti: ";
+			for (int i = 0; i < this->nrpacientiinternati; i++)
+				cout << this->idinternati[i] << " ";
+		}
+		else
+			cout << "-";
+		cout << endl;
+		cout << "etaj covid: ";
+		if (this->etajcovid == 1)
+			cout << "da" << endl;
+		else
+			cout << "nu" << endl;
+	}
+
+	~Etaj()
+	{
+		delete[]this->idinternati;
+		nretaje--;
+	}
+
+	friend ostream& operator<<(ostream& out, const Etaj& e);
+	friend istream& operator>>(istream& in, Etaj& e);
+
+};
+
+int Etaj::nretaje = 0;
+
+ostream& operator<<(ostream& out, const Etaj& e)
+{
+	out << endl;
+	out << "id: " << e.id << endl;
+	if (e.nrpacientiinternati != 0 && e.idinternati != NULL)
+	{
+		out << "nr pacienti: " << e.nrpacientiinternati << endl;
+		out << "id pacienti: ";
+		for (int i = 0; i < e.nrpacientiinternati; i++)
+			out << e.idinternati[i] << " ";
+	}
+	else
+		out << "-";
+	out << endl;
+	out << "etaj covid: ";
+	if (e.etajcovid == 1)
+		out << "da" << endl;
+	else
+		out << "nu" << endl;
+	return out;
+}
+
+istream& operator>>(istream& in, Etaj& e)
+{
+	cout << "nr pacienti: ";
+	in >> e.nrpacientiinternati;
+	delete[]e.idinternati;
+	if (e.nrpacientiinternati != 0)
+	{
+		e.idinternati = new int[e.nrpacientiinternati];
+		cout << "id pacienti: ";
+		for (int i = 0; i < e.nrpacientiinternati; i++)
+			in >> e.idinternati[i];
+	}
+	else
+	{
+		e.nrpacientiinternati = 0;
+		e.idinternati = NULL;
+	}
+	cout << "etaj covid: ";
+	in >> e.etajcovid;
+	return in;
+}
+
+
+int main()
+{
+	string nume = "Popescu Ioana";
+	char cnp[] = "6020304450078";
+	int programari[] = { 1,2,3 };
+	Pacient p(nume, cnp, 19, 3, programari, 1);
+	Pacient p1;
+	string nume2 = "Popa Vlad";
+	char cnp2[] = "5970604440088";
+	Pacient p2(nume2, cnp2, 25);
+	cout << p;
+	cout << p1;
+	cout << p2;
+	p1 = p2;
+	cout << p1;
+	Pacient p4;
+	p4.setabonament(0);
+	p4.setcnp(cnp);
+	p4.setnume("Carla");
+	p4.setvarsta(20);
+	p4.setprogramari(3, programari);
+	cout << p4.getabonament() << endl;
+	cout << p4.getcnp() << endl;
+	cout << p4.getnrprogramari() << endl;
+	cout << p4.getnume() << endl;
+	cout << p4.getvarsta() << endl;
+	cout << p4.getnrprogramari() << endl;
+	for (int i = 0; i < p4.getnrprogramari(); i++)
+		cout << p4.getprogramari()[i] << " ";
+	cout << "programarea nr 2 a pacientului " << string(p) << " e de tipul: " << p[2] << endl;
+	p4 += p;
+	p4.afisare();
+	p++;
+	cout << "Noile date ale pacientului: " << string(p) << " dupa ziua de nastere sunt: " << p << endl;
+	Pacient p5;
+	//cin >> p5;
+	//cout << p5;
+	if (p > p2)
+		cout << "pacientul p are mai multe programari ca p2" << endl;
+	else
+		cout << "pacientul p are mai putine programari ca p2" << endl;
+	if (p2 == p)
+		cout << "pacientii au acelasi nr de programari" << endl;
+	else
+		cout << "pacientii nu au acelasi nr de programari" << endl;
+	fstream fOut("pacienti.txt", ios::out | ios::binary);
+	p2.writeToFile(fOut);
+	p.writeToFile(fOut);
+	fOut.close();
+	//fstream fIn("pacienti.txt", ios::in | ios::binary);
+	//Pacient p6;
+	//p6.readFromFile(fIn);
+	//cout << p6;
+	//fIn.close();
+
+
+
+
+	Medic m3;
+	string nume3 = "Popa Maria";
+	float pret[] = { 100,200 };
+	Medic m(nume3, 1, "ginecologie", 3, 7000, 2, pret);
+	Medic m2("Popescu Victor", "endocrinologie");
+	cout << m;
+	cout << m2;
+	cout << m3;
+	m3 = m2;
+	cout << m3;
+	Medic m4;
+	m4.setidspec(5);
+	float pret2[] = { 20000,3000,400 };
+	m4.setinterventii(3, pret2);
+	m4.setnume("Ion Paul");
+	m4.setprimar(1);
+	m4.setsalariu(9000);
+	m4.setspecializare("cardiologie");
+	cout << m4.getidspec() << endl;
+	cout << m4.getnrinterventii() << endl;
+	for (int i = 0; i < m4.getnrinterventii(); i++)
+		cout << m4.getpretinterventii()[i] << endl;
+	cout << m4.getprimar() << endl;
+	cout << m4.getsalariu() << endl;
+	cout << m4.getspecializare() << endl;
+	cout << "pretul interventiei nr 2 a medicului " << string(m4) << " este :" << m4[2] << endl;
+	m4 *= 1.2f;
+	m4.afisare();
+	if (m4 > m)
+		cout << "medicul m4 are un salariu mai mare ca medicul m" << endl;
+	else
+		cout << "medicul m4 are un salariu mai mic ca medicul m" << endl;
+	if (m4 == m)
+		cout << "cei doi medici au acelasi nr de interventii" << endl;
+	else
+		cout << "cei doi medici nu au acelasi nr de interventii" << endl;
+	Medic m5;
+	//cin >> m5;
+	//cout<<m5;
+	m4--;
+	cout << "noile preturi ale medicului m4 sunt: ";
+	for (int i = 0; i < m4.getnrinterventii(); i++)
+		cout << m4.getpretinterventii()[i] << " ";
+	fstream fout("medici.txt", ios::out | ios::binary);
+	m4.writeToFile(fout);
+	m.writeToFile(fout);
+	fout.close();
+	//fstream fin("medici.txt", ios::in | ios::binary);
+	//Medic m6;
+	//m6.readFromFile(fin);
+	//cout << m6;
+	//fin.close();
+	Medic* listaMedici = new Medic[3];
+	listaMedici[0] = m2;
+	listaMedici[1] = m4;
+	listaMedici[2] = m5;
+	float salariuTotal = 0;
+	cout << "\n";
+	for (int i = 0; i < 3; i++)
+		salariuTotal += listaMedici[i].calculsalariu();
+	cout << "\nsalariu total: " << salariuTotal;
+
+
+
+
+
+
+	int sali1[] = { 20,25,34 };
+	char proc[] = "extractie amigdale";
+	Proceduri pr(proc, "ORL", 2500, 3, sali1, 1);
+	char proc2[] = "cauterizare neg";
+	Proceduri pr2(proc2, 500);
+	Proceduri pr3;
+	cout << pr;
+	cout << pr2;
+	pr3 = pr2;
+	Proceduri pr4;
+	pr4.setanestezie(0);
+	char control[] = "control";
+	pr4.setdenumire(control);
+	pr4.setpret(150);
+	int sali2[] = { 10,12 };
+	pr4.setsali(2, sali2);
+	string specializare = "cardiologie";
+	pr4.setspecializarepro(specializare);
+	cout << pr4.getanestezie() << endl;
+	cout << pr4.getdenumire() << endl;
+	cout << pr4.getnrsali() << endl;
+	for (int i = 0; i < pr4.getnrsali(); i++)
+		cout << pr4.getsali()[i] << " ";
+	cout << pr4.getpret() << endl;
+	cout << pr4.getspecializarepro() << endl;
+	cout << pr4 << endl;
+	cout << "Procedura " << int(pr) << " se poate efectua in sala " << pr[1] << endl;
+	if (pr >= pr2)
+		cout << "pretul pr este mai mare sau egal cu pretul pr2" << endl;
+	else
+		cout << "pretul pr nu este mai mare sau egal cu pretul pr2" << endl;
+	if (pr2 == pr3)
+		cout << "procedurile se pot efectua in acelasi nr de sali" << endl;
+	else
+		cout << "procedurile nu se pot efectua in acelasi nr de sali" << endl;
+	cout << "pret initial pr2: " << pr2.getpret() << endl;
+	pr2 /= 0.8f;
+	cout << "noul pret al pr 2 este: " << pr2.getpret() << endl;
+	Proceduri pr5;
+	//cin >> pr5;
+	//cout<<pr5;
+	pr--;
+	cout << "procedura pr se poate efectua in: ";
+	for (int i = 0; i < pr.getnrsali(); i++)
+		cout << pr.getsali()[i] << " ";
+	fstream fOUt("proceduri.txt", ios::out | ios::binary);
+	pr2.writeToFile(fOUt);
+	pr3.writeToFile(fOUt);
+	fOUt.close();
+	//fstream fIN("proceduri.txt", ios::in | ios::binary);
+	//Proceduri pr6;  
+	//pr6.readFromFile(fIN);
+	//cout << pr6;
+	//fIN.close();
+	cout << endl;
+	Proceduri** listaProceduri = new Proceduri * [3];
+	listaProceduri[0] = &pr2;
+	listaProceduri[1] = &pr3;
+	listaProceduri[2] = &pr5;
+	float pretTotal = 0;
+	for (int i = 0; i < 3; i++)
+	{
+		pretTotal += listaProceduri[i]->calculPret();
+	}
+	cout << "pret total: " << pretTotal;
+	cout << endl;
+
+
+
+
+
+	int alim[] = { 60,65,50 };
+	Ambulante a(2010, 20000, 3, alim);
+	Ambulante a2(3);
+	Ambulante a3;
+	cout << a;
+	cout << a2;
+	cout << a3;
+	a3 = a2;
+	Ambulante a4;
+	a4.setalimentari(3, alim);
+	a4.setan(2008);
+	a4.setpretachizitie(15000);
+	cout << a4.getan() << endl;
+	cout << a4.getpretachizitie() << endl;
+	cout << a4.getnralimentari() << endl;
+	for (int i = 0; i < a4.getnralimentari(); i++)
+		cout << a4.getalimentari()[i] << " ";
+	a4.afisare();
+	cout << "alimentarea cu nr 2 a ambulantei cu id:" << int(a4) << " este de " << a4[2] << endl;
+	if (a4 <= a)
+		cout << "a4 are mai putine sau tot atatea alimentari ca a" << endl;
+	else
+		cout << "a4 nu are mai putine sau tot atatea alimentari ca a" << endl;
+	a4 -= 1;
+	cout << a4;
+	if (a4 == a)
+		cout << "cele doua ambulante au acelasi nr de alimentari" << endl;
+	else
+		cout << "cele doua ambulante nu au acelasi nr de alimentari" << endl;
+	Ambulante a5;
+	//cin >> a5;
+	//cout<<a5;
+	a++;
+	cout << "anul de fabricatie al ambulantei a este: " << a.getan() << endl;
+	fstream fOUT("ambulante.txt", ios::out | ios::binary);
+	a4.writeToFile(fOUT);
+	a.writeToFile(fOUT);
+	fOUT.close();
+	//fstream fIN2("ambulante.txt", ios::in | ios::binary);
+	//Ambulante a6;
+	//a6.readFromFile(fIN2);
+	//cout << a6;
+	//fIN2.close();
+
+
+
+
+
+	int idpac[] = { 1,3,5,6 };
+	Etaj e(4, idpac, 1);
+	Etaj e1(5);
+	Etaj e2;
+	cout << e;
+	cout << e1;
+	cout << e2;
+	e2 = e;
+	Etaj e3;
+	e3.setetajcovid(1);
+	int idpacienti[] = { 2,4,7 };
+	e3.setpacientiinternati(3, idpacienti);
+	cout << e3.getetajcovid() << endl;
+	cout << e3.getnrpacientiinternati() << endl;
+	for (int i = 0; i < e3.getnrpacientiinternati(); i++)
+		cout << e3.getidinternati()[i] << " ";
+	e3.afisare();
+	cout << " pe etajul cu id:" << int(e) << " pacientul cu nr 2 are id: " << e[2] << endl;
+	cout << "nr pacienti etaj e: " << e.getnrpacientiinternati() << endl;
+	e -= 1;
+	cout << "nou nr pacienti dupa externare: " << e.getnrpacientiinternati() << endl;
+	if (e < e3)
+		cout << "etajul e are mai putini pacienti internati ca e3" << endl;
+	else
+		cout << "etajul e nu are mai putini pacienti internati ca e3" << endl;
+	if (e == e2)
+		cout << "cele doua etaje sunt de acelasi tip" << endl;
+	else
+		cout << "cele doua etaje nu sunt de acelasi tip" << endl;
+	Etaj e4;
+	//cin >> e4;
+	//cout << e4;
+	e3--;
+	cout << "dupa externare, pe etajul e3 au mai ramas " << e3.getnrpacientiinternati() << " pacienti, cu id: ";
+	for (int i = 0; i < e3.getnrpacientiinternati(); i++)
+		cout << e3.getidinternati()[i] << " ";
+	fstream fOut2("etaje.txt", ios::out | ios::binary);
+	e3.writeToFile(fOut2);
+	e2.writeToFile(fOut2);
+	fOut2.close();
+	//fstream fIn2("etaje.txt", ios::in | ios::binary);
+	//Etaj e6;
+	//e6.readFromFile(fIn2);
+	//cout << e6;
+	//fIn2.close();
+
+
+	Angajat ang1(8, 1);
+	Angajat ang2(7, 0);
+	Angajat ang3(4, 1);
+	Angajat listaAngajati[] = { ang1,ang2,ang3 };
+
+	//lucru cu STL-uri
+	cout << "\n---------------------VECTOR--------------------\n";
+	vector<int> vInt;
+	vInt.push_back(12);
+	vInt.push_back(17);
+	vInt.push_back(15);
+
+	for (int i = 0; i < vInt.size(); i++)
+		cout << vInt[i] << " ";
+	cout << endl;
+	vector<int>::iterator itV;
+	for (itV = vInt.begin(); itV != vInt.end(); itV++)
+		cout << *itV << " ";
+
+	vector<Angajat> vAng;
+	vAng.push_back(ang1);
+	vAng.push_back(ang2);
+	vAng.push_back(ang3);
+
+	cout << endl;
+	vector<Angajat>::iterator itV2;
+	for (itV2 = vAng.begin(); itV2 != vAng.end(); itV2++)
+		cout << *itV2 << " ";
+
+
+	//lucru cu STL-uri List
+	cout << "\n---------------------LIST--------------------\n";
+	list<float> lFloat;
+	lFloat.push_back(12.6f);
+	lFloat.push_back(14.5f);
+	lFloat.push_front(10.25f);
+
+	list<float>::iterator itL;
+	for (itL = lFloat.begin(); itL != lFloat.end(); itL++)
+		cout << *itL << " ";
+
+	list<Angajat> lAng;
+	lAng.push_back(ang1);
+	lAng.push_back(ang2);
+	lAng.push_back(ang3);
+	lAng.push_back(ang1);
+
+	list<Angajat>::iterator itL2;
+	for (itL2 = lAng.begin(); itL2 != lAng.end(); itL2++)
+		cout << *itL2;
+
+
+
+	//lucru cu STL-uri Set
+	cout << "\n---------------------SET--------------------\n";
+	set<string> sString;
+	sString.insert("Ionescu Ioana");
+	sString.insert("Popa Dan");
+	sString.insert("Teodorescu Vlad");
+	sString.insert("Popa Maria");
+
+	set<string>::iterator itS;
+	for (itS = sString.begin(); itS != sString.end(); itS++)
+		cout << *itS << " ";
+	cout << endl;
+	set<string>::reverse_iterator itRS;
+	for (itRS = sString.rbegin(); itRS != sString.rend(); itRS++)
+		cout << *itRS << " ";
+
+	itS = sString.find("Popa Dan");
+	if (itS != sString.end())
+		cout << "\nS-a gasit Popa Dan in set";
+	else
+		cout << "\nNu s-a gasit";
+
+
+
+	//lucru cu STL-uri Map
+	cout << "\n---------------------MAP--------------------\n";
+	map<int, Angajat> mAng;
+	mAng[0] = ang1;
+	mAng[4] = ang2;
+	mAng[8] = ang3;
+	mAng[0] = ang3;
+
+	map<int, Angajat>::iterator itM;
+	for (itM = mAng.begin(); itM != mAng.end(); itM++)
+		cout << itM->first << " " << itM->second << endl;
+
+
+
+
+
+	return 0;
+
+
+}
